@@ -1,0 +1,17 @@
+# Claude Code local config (not for publishing)
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# Python (icon generator)
+__pycache__/
+*.pyc
+
+# Local screenshots staging (keep docs/screenshots tracked)
+docs/screenshots/*.tmp
