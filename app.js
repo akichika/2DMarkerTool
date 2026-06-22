@@ -138,7 +138,7 @@ function renderLicenses() { if (els.licList) els.licList.innerHTML = LICENSES_HT
 /* ============================================================ このアプリについて */
 function renderAbout() {
   if (!els.aboutList) return;
-  const site = "https://akichika.github.io/2DMarkerTool", repo = "https://github.com/akichika/2DMarkerTool", x = "https://x.com/akichika";
+  const site = "https://akichika.github.io/2DMarkerTool/", repo = "https://github.com/akichika/2DMarkerTool", x = "https://x.com/akichika";
   els.aboutList.innerHTML =
     `<p class="about-name"><strong>2DMarkerTool</strong></p>` +
     `<p class="about-desc">${escapeHtml(t("subtitle"))}</p>` +
@@ -658,7 +658,7 @@ function printBatchSheet() {
 function printImages(items, title, note) {
   const w = window.open("", "_blank");
   const cards = items.map((it) => `<figure>${it.svg}<figcaption>${escapeHtml(it.label)}</figcaption></figure>`).join("");
-  const site = "https://akichika.github.io/2DMarkerTool";
+  const site = "https://akichika.github.io/2DMarkerTool/";
   const head = title ? `<h2 class="ttl">${escapeHtml(title)}</h2>` : "";
   const ipNote = note ? `<p class="ipnote">${escapeHtml(note)}</p>` : "";
   const credit = `<p class="credit"><strong>2DMarkerTool</strong> &nbsp;·&nbsp; ${site} &nbsp;·&nbsp; © akichika</p>`;

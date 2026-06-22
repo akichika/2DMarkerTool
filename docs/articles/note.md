@@ -2,7 +2,7 @@
 
 QRコードやARでよく見る四角いマーカー（ArUco / AprilTag）。それを **作って・印刷して・カメラでかざすだけで認識**できる、ブラウザ完結のツール「**2DMarkerTool**」を公開しました。アプリのインストールも会員登録も不要、**映像は外部に送られません**。
 
-- 触ってみる 👉 https://akichika.github.io/2DMarkerTool
+- 触ってみる 👉 https://akichika.github.io/2DMarkerTool/
 
 ![アプリ画面](https://raw.githubusercontent.com/akichika/2DMarkerTool/main/docs/screenshots/01-generate-aruco.png)
 
@@ -39,7 +39,7 @@ QRコードやARでよく見る四角いマーカー（ArUco / AprilTag）。そ
 
 ## 使い方（かんたん）
 
-1. サイトを開く 👉 https://akichika.github.io/2DMarkerTool
+1. サイトを開く 👉 https://akichika.github.io/2DMarkerTool/
 2. 「生成」タブでマーカーを作って印刷／別の画面に表示
 3. 「認識」タブで **カメラ開始** → マーカーをかざす
 4. 表示モードを「3D姿勢」にしたり、「3Dモデル」で好きな形を乗せて遊ぶ

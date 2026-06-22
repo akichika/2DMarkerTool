@@ -14,7 +14,7 @@ ArUco / AprilTag / QR / バーコード の **生成** と、カメラによる 
 ![Three.js](https://img.shields.io/badge/Three.js-r128-black)
 ![PWA](https://img.shields.io/badge/PWA-installable-5a0fc8)
 
-🌐 **公開サイト**: https://akichika.github.io/2DMarkerTool ・ 🇬🇧 **English**: [README.en.md](README.en.md)
+🌐 **公開サイト**: https://akichika.github.io/2DMarkerTool/ ・ 🇬🇧 **English**: [README.en.md](README.en.md)
 
 </div>
 

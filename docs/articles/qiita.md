@@ -2,7 +2,7 @@
 
 OpenCV.js と Three.js で、**マーカーの生成**から**カメラ認識・3D姿勢推定・3Dワールド表示・ARモデル重畳**までを、**ビルド不要・素のHTML/CSS/JS**で実装した Web アプリ「**2DMarkerTool**」を公開しました。映像は端末内で完結し、外部送信しません。
 
-- 🌐 公開サイト: https://akichika.github.io/2DMarkerTool
+- 🌐 公開サイト: https://akichika.github.io/2DMarkerTool/
 - 💻 リポジトリ: https://github.com/akichika/2DMarkerTool
 
 ![生成タブ](https://raw.githubusercontent.com/akichika/2DMarkerTool/main/docs/screenshots/01-generate-aruco.png)

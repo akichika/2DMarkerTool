@@ -14,7 +14,7 @@
 ![Three.js](https://img.shields.io/badge/Three.js-r128-black)
 ![PWA](https://img.shields.io/badge/PWA-installable-5a0fc8)
 
-🌐 **Live**: https://akichika.github.io/2DMarkerTool ・ 🇯🇵 **日本語**: [README.md](README.md)
+🌐 **Live**: https://akichika.github.io/2DMarkerTool/ ・ 🇯🇵 **日本語**: [README.md](README.md)
 
 </div>
 
