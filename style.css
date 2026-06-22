@@ -202,7 +202,8 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent);
   font-size: 0; line-height: 0;
 }
 #video { width: 100%; display: block; }
-.video-wrap.mirror #video, .video-wrap.mirror #three-canvas { transform: scaleX(-1); }
+.static-img { width: 100%; display: block; }
+.video-wrap.mirror #video, .video-wrap.mirror #three-canvas, .video-wrap.mirror #static-img { transform: scaleX(-1); }
 #overlay, #three-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 #three-canvas { display: none; }
 .lock-badge {
@@ -242,6 +243,8 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent);
 .detect-item .meta { color: var(--muted); font-size: .76rem; }
 .detect-item .decoded { font-size: .82rem; margin: 3px 0; }
 .detect-item .decoded-text { font-weight: 700; color: var(--text); word-break: break-all; background: var(--panel-2); padding: 1px 5px; }
+.detect-item a.url-link { color: var(--accent-2); cursor: pointer; text-decoration: underline; }
+.video-wrap.has-url { cursor: pointer; }
 .empty { color: var(--muted); font-size: .85rem; padding: 6px; }
 
 footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14px 16px 26px; }
@@ -322,6 +325,13 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .about-name strong { font-size: 1.05rem; }
 .about-desc { color: var(--muted); }
 .about-hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
+.about-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.about-tab { padding: 5px 11px; min-height: 30px; font-size: .82rem; background: var(--elev); border: 1px solid var(--border); }
+.about-tab.active { background: var(--panel-2); color: var(--text); font-weight: 700; border-bottom: 2px solid var(--accent); }
+.about-pane { display: none; }
+.about-pane.active { display: block; }
+.log-actions { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+#log-list { max-height: 46vh; overflow: auto; }
 .panel-list a { color: var(--accent-2); word-break: break-all; }
 .panel-list p { margin: 6px 0; }
 .panel-list ul { margin: 4px 0 12px; padding-left: 18px; }

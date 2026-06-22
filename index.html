@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png?v=20" />
   <link rel="icon" type="image/png" href="icon-192.png?v=20" />
-  <link rel="stylesheet" href="style.css?v=23" />
+  <link rel="stylesheet" href="style.css?v=25" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -19,6 +19,7 @@
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v11m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></symbol>
       <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-4a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2h-2M6 14h12v7H6z"/></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7z"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></symbol>
       <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></symbol>
       <symbol id="i-console" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l3 3-3 3M13 15h4"/></symbol>
       <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
@@ -69,11 +70,6 @@
             <option value="hc" data-i18n="theme.hc">ハイコントラスト</option>
           </select>
         </label>
-        <button id="kbd-btn" class="iconbtn" data-i18n-title="kbd.title"><svg class="ic"><use href="#i-keyboard"/></svg></button>
-        <button id="log-btn" class="iconbtn" data-i18n-title="log.button">
-          <svg class="ic"><use href="#i-console"/></svg>
-          <span id="log-badge" class="log-badge" hidden>0</span>
-        </button>
       </div>
     </div>
   </header>
@@ -249,6 +245,8 @@
         <span class="action-buttons">
           <button id="scan-start" class="iconbtn primary" disabled data-i18n-title="scan.start">
             <svg class="ic ic-fill"><use href="#i-play"/></svg></button>
+          <button id="scan-pause" class="iconbtn" disabled data-i18n-title="scan.pause">
+            <svg class="ic ic-fill"><use href="#i-pause"/></svg></button>
           <button id="scan-stop" class="iconbtn" disabled data-i18n-title="scan.stop">
             <svg class="ic ic-fill"><use href="#i-stop"/></svg></button>
         </span>
@@ -274,6 +272,8 @@
           <div class="panel-bar">
             <span class="panel-title" data-i18n="panel.camera">カメラ</span>
             <button type="button" id="adjust-btn" class="mini" data-i18n-title="adj.title"><svg class="ic"><use href="#i-sliders"/></svg></button>
+            <button type="button" id="static-load-btn" class="mini" data-i18n-title="scan.loadImage"><svg class="ic"><use href="#i-image"/></svg></button>
+            <input id="static-file" type="file" accept="image/*" hidden />
             <span class="panel-tools">
               <button type="button" class="mini" data-move="camera:-1" data-i18n-title="panel.moveBack">◀</button>
               <button type="button" class="mini" data-move="camera:1" data-i18n-title="panel.moveFwd">▶</button>
@@ -281,6 +281,7 @@
           </div>
           <div class="video-wrap">
             <video id="video" playsinline autoplay muted></video>
+            <img id="static-img" class="static-img" hidden alt="" />
             <canvas id="overlay"></canvas>
             <canvas id="three-canvas"></canvas>
             <div id="lock-indicator" class="lock-badge" hidden></div>
@@ -367,27 +368,24 @@
   </footer>
 
   <!-- ログパネル -->
-  <div id="log-panel" class="side-panel" hidden>
-    <div class="panel-head"><strong data-i18n="log.title">コンソール / ログ</strong>
-      <div class="panel-actions"><button id="log-clear" data-i18n="log.clear">クリア</button><button id="log-close" class="icon-btn">✕</button></div>
-    </div>
-    <div id="log-list" class="panel-list"><p class="empty" data-i18n="log.empty">メッセージはありません</p></div>
-  </div>
-
-  <!-- ショートカットパネル -->
-  <div id="kbd-panel" class="side-panel" hidden>
-    <div class="panel-head"><strong data-i18n="kbd.title">キーボードショートカット</strong>
-      <div class="panel-actions"><button id="kbd-close" class="iconbtn" aria-label="close">✕</button></div>
-    </div>
-    <div id="kbd-list" class="panel-list"></div>
-  </div>
-
-  <!-- このアプリについて -->
+  <!-- このアプリについて（ショートカット・ログをタブ内包） -->
   <div id="about-panel" class="side-panel centered" hidden>
-    <div class="panel-head"><strong data-i18n="about.title">このアプリについて</strong>
+    <div class="panel-head">
+      <div class="about-tabs" id="about-tabs">
+        <button type="button" class="about-tab active" data-atab="about" data-i18n="about.title">このアプリについて</button>
+        <button type="button" class="about-tab" data-atab="kbd" data-i18n="kbd.title">キーボードショートカット</button>
+        <button type="button" class="about-tab" data-atab="log" data-i18n="log.title">コンソール / ログ</button>
+      </div>
       <div class="panel-actions"><button id="about-close" class="iconbtn" aria-label="close">✕</button></div>
     </div>
-    <div id="about-list" class="panel-list"></div>
+    <div class="panel-list">
+      <div id="about-list" class="about-pane active"></div>
+      <div id="kbd-list" class="about-pane"></div>
+      <div id="about-log" class="about-pane">
+        <div class="log-actions"><button id="log-clear" class="mini" data-i18n="log.clear">クリア</button></div>
+        <div id="log-list"><p class="empty" data-i18n="log.empty">メッセージはありません</p></div>
+      </div>
+    </div>
   </div>
 
   <!-- ライセンスパネル -->
@@ -409,7 +407,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="i18n.js?v=20"></script>
-  <script src="app.js?v=24"></script>
+  <script src="i18n.js?v=25"></script>
+  <script src="app.js?v=25"></script>
 </body>
 </html>
