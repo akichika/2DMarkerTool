@@ -325,9 +325,12 @@ footer { text-align: center; color: var(--muted); font-size: .78rem; padding: 14
 .about-name strong { font-size: 1.05rem; }
 .about-desc { color: var(--muted); }
 .about-hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-.about-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-.about-tab { padding: 5px 11px; min-height: 30px; font-size: .82rem; background: var(--elev); border: 1px solid var(--border); }
+.side-panel.centered { width: min(680px, calc(100vw - 24px)); }
+.about-tabs { display: flex; gap: 4px; flex-wrap: nowrap; }
+.about-tab { padding: 5px 12px; min-height: 30px; font-size: .82rem; white-space: nowrap; background: var(--elev); border: 1px solid var(--border); }
 .about-tab.active { background: var(--panel-2); color: var(--text); font-weight: 700; border-bottom: 2px solid var(--accent); }
+.panel-actions .about-close { padding: 2px 7px; min-height: 24px; font-size: .8rem; line-height: 1; }
+@media (max-width: 480px) { .about-tabs { flex-wrap: wrap; } }
 .about-pane { display: none; }
 .about-pane.active { display: block; }
 .log-actions { display: flex; justify-content: flex-end; margin-bottom: 6px; }

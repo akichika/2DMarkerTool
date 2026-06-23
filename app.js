@@ -282,6 +282,13 @@ function bindUI() {
   els.aboutBtn.addEventListener("click", () => { if (els.aboutPanel.hidden) openAbout("about"); else togglePanel(els.aboutPanel, false); });
   els.aboutClose.addEventListener("click", () => togglePanel(els.aboutPanel, false));
   els.aboutTabs.addEventListener("click", (e) => { const b = e.target.closest("[data-atab]"); if (b) setAboutTab(b.dataset.atab); });
+  // ESC・ウィンドウ外クリックで「このアプリについて」を閉じる
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && els.aboutPanel && !els.aboutPanel.hidden) togglePanel(els.aboutPanel, false); });
+  document.addEventListener("mousedown", (e) => {
+    if (!els.aboutPanel || els.aboutPanel.hidden) return;
+    if (els.aboutPanel.contains(e.target) || (els.aboutBtn && els.aboutBtn.contains(e.target))) return;
+    togglePanel(els.aboutPanel, false);
+  });
   els.mirrorToggle.addEventListener("change", onMirrorChange);
   // QR の URL クリックで外部サイトを開く（リスト・映像上）
   els.detectList.addEventListener("click", (e) => { const a = e.target.closest(".url-link"); if (a) { e.preventDefault(); openUrlConfirm(a.dataset.url); } });
@@ -725,21 +732,27 @@ function waitForVideoReady(video) {
     ["loadedmetadata", "loadeddata", "canplay"].forEach((e) => video.addEventListener(e, on));
   });
 }
-// 一時停止トグル
+// 一時停止（再開は「カメラ開始」ボタンで行う）
 function togglePause() {
-  if (!scanning || staticImg) return;
-  paused = !paused;
-  if (paused) { try { els.video.pause(); } catch (e) {} recognizeFrozen(); }
-  else { try { els.video.play(); } catch (e) {} frozenResults = null; }
+  if (!scanning || staticImg || paused) return;
+  paused = true;
+  try { els.video.pause(); } catch (e) {}
+  recognizeFrozen();
+  updatePauseBtn();
+}
+function resumeScan() {
+  if (!scanning || !paused) return;
+  paused = false; frozenResults = null;
+  try { els.video.play(); } catch (e) {}
   updatePauseBtn();
 }
 function updatePauseBtn() {
   if (!els.scanPause) return;
   els.scanPause.classList.toggle("active", paused);
-  els.scanPause.disabled = !scanning || !!staticImg;
-  const u = els.scanPause.querySelector("use");
-  if (u) u.setAttribute("href", paused ? "#i-play" : "#i-pause");
-  els.scanPause.title = t(paused ? "scan.resume" : "scan.pause");
+  els.scanPause.disabled = !scanning || !!staticImg || paused; // 一時停止中は押せない
+  els.scanPause.title = t("scan.pause");
+  // カメラ開始ボタン: 未起動なら開始、一時停止中なら再開で有効化
+  if (els.scanStart) els.scanStart.disabled = scanning && !paused;
 }
 /* ---------- 静止画読み込み ---------- */
 function showStaticImage(url) {
@@ -770,6 +783,7 @@ function loadStaticImage(file) {
 }
 async function startScan() {
   if (!cvReady) return;
+  if (scanning && paused) { resumeScan(); return; } // 一時停止からの再開
   if (staticImg) { if (!window.confirm(t("msg.clearStaticConfirm"))) return; clearStaticImage(); }
   stopScan();
   const constraints = { audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" } };
@@ -811,8 +825,9 @@ function stopScan() {
   if (threeReady && threeRenderer) threeRenderer.clear();
   if (els.scanStart) els.scanStart.disabled = false;
   if (els.scanStop) els.scanStop.disabled = true;
-  if (els.detectList) { els.detectList.innerHTML = `<p class="empty">${t("scan.none")}</p>`; els.detectCount.textContent = "0"; }
+  if (els.detectList) { els.detectList.innerHTML = `<p class="empty">${t("scan.none")}</p>`; els.detectCount.textContent = "0"; lastListSig = ""; }
   if (els.lockIndicator) els.lockIndicator.hidden = true;
+  updatePauseBtn();
 }
 function loop() {
   rafId = requestAnimationFrame(loop);
@@ -983,7 +998,7 @@ function recognizeFrozen() {
   setTimeout(() => {
     try {
       if (!captureToGray()) return;
-      frozenResults = votedRecognize();
+      frozenResults = votedRecognize(5, 0.6); // 5回中3回(60%)以上一致したものを採用（軽量）
       onDisplayModeChange();
       renderResults(frozenResults);
       if (els.toast) els.toast.hidden = true;
@@ -1176,12 +1191,16 @@ function onStageClick(e) {
   }
 }
 
-let lastResults = null;
+let lastResults = null, lastListSig = "", lastListT = 0;
 function updateInfoPanel(results, poses) {
   lastResults = results;
   if (els.videoWrap) els.videoWrap.classList.toggle("has-url", results.some((r) => r.isQr && isHttpUrl(r.idText)));
   els.detectCount.textContent = results.length;
-  if (!results.length) { els.detectList.innerHTML = `<p class="empty">${t("scan.none")}</p>`; return; }
+  if (!results.length) { if (lastListSig !== "") { els.detectList.innerHTML = `<p class="empty">${t("scan.none")}</p>`; lastListSig = ""; } return; }
+  // 検出セットが同じなら毎フレーム再描画しない（URLリンクを安定させ、クリック反応を速くする）
+  const sig = results.map((r) => r.dict + "#" + r.id).sort().join("|"), now = performance.now();
+  if (sig === lastListSig && now - lastListT < 350) return;
+  lastListSig = sig; lastListT = now;
   const order = results.map((r, i) => i);
   order.sort((a, b) => (results[a].seed - results[b].seed));
   const W = els.overlay.width, mir = els.mirrorToggle.checked, MX = mir ? (x) => W - x : (x) => x;
@@ -1721,7 +1740,7 @@ function initWorld() {
   worldRig.add(axisLabel("Z", 0, 0, 95, 0x5599ff));
   worldControls = new THREE.OrbitControls(worldCam, worldRenderer.domElement);
   worldControls.target.set(0, 0, -250); worldControls.enableDamping = true; worldControls.update();
-  worldControls.addEventListener("change", () => { if (!scanning) worldRenderer.render(worldScene, worldCam); });
+  worldControls.addEventListener("change", () => { if (!scanning || paused) worldRenderer.render(worldScene, worldCam); });
   // 視点操作中は認識処理を ~10Hz に落とす
   worldControls.addEventListener("start", () => { worldInteracting = true; updateDetThrottle(); });
   worldControls.addEventListener("end", () => { worldInteracting = false; updateDetThrottle(); });

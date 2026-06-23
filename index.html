@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png?v=20" />
   <link rel="icon" type="image/png" href="icon-192.png?v=20" />
-  <link rel="stylesheet" href="style.css?v=25" />
+  <link rel="stylesheet" href="style.css?v=27" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -372,11 +372,11 @@
   <div id="about-panel" class="side-panel centered" hidden>
     <div class="panel-head">
       <div class="about-tabs" id="about-tabs">
-        <button type="button" class="about-tab active" data-atab="about" data-i18n="about.title">このアプリについて</button>
-        <button type="button" class="about-tab" data-atab="kbd" data-i18n="kbd.title">キーボードショートカット</button>
-        <button type="button" class="about-tab" data-atab="log" data-i18n="log.title">コンソール / ログ</button>
+        <button type="button" class="about-tab active" data-atab="about" data-i18n="about.tabAbout">概要</button>
+        <button type="button" class="about-tab" data-atab="kbd" data-i18n="kbd.short">ショートカット</button>
+        <button type="button" class="about-tab" data-atab="log" data-i18n="log.short">ログ</button>
       </div>
-      <div class="panel-actions"><button id="about-close" class="iconbtn" aria-label="close">✕</button></div>
+      <div class="panel-actions"><button id="about-close" class="about-close" aria-label="close">✕</button></div>
     </div>
     <div class="panel-list">
       <div id="about-list" class="about-pane active"></div>
@@ -407,7 +407,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="i18n.js?v=25"></script>
-  <script src="app.js?v=25"></script>
+  <script src="i18n.js?v=27"></script>
+  <script src="app.js?v=27"></script>
 </body>
 </html>
