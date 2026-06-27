@@ -59,10 +59,10 @@ npx serve .
 ## 認識のコツ
 
 - マーカーは白い余白（クワイエットゾーン）付きで生成し、白い紙などに置くと安定します。
-- ピントを合わせ、マーカー全体を画面に入れ、余計な光や極端な角度を避けてください。
+- ピントを合わせ、マーカー全体を画面に入れ、極端な角度を避けてください。
 - QR や JAN は近づけてブレを抑えると読みやすくなります。暗いときはヘッダー付近のスライダーで明るさ・コントラストを上げてみてください。
 
-## 仕組み概略
+## 仕組み（簡単に）
 
 - ArUco / AprilTag は OpenCV の `cv.aruco_ArucoDetector` と `generateImageMarker`（`DICT_*` 列挙）を使っています。
 - QR は生成に qrcode-generator、検出に `cv.QRCodeDetector`。1D バーコードは生成に JsBarcode、検出に `cv.barcode_BarcodeDetector` を使います。

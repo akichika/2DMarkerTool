@@ -68,7 +68,7 @@ On phones you need HTTPS hosting or a tunnel (e.g. ngrok).
 
 ## Tips for reliable recognition
 - Generate markers **with a white quiet zone** and place them on a **white background** (paper) for best stability
-- Ensure the subject is in focus and framed correctly, avoid unwanted light, and prevent extreme angles.
+- Keep them in focus, fully in frame, and not at an extreme angle
 - For QR/JAN, move closer and avoid blur; in low light, raise brightness/contrast with the adjustment sliders
 
 ## How it works
