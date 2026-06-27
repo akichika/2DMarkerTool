@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png?v=20" />
   <link rel="icon" type="image/png" href="icon-192.png?v=20" />
-  <link rel="stylesheet" href="style.css?v=27" />
+  <link rel="stylesheet" href="style.css?v=29" />
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -26,10 +26,10 @@
       <symbol id="i-install" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
       <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></symbol>
       <symbol id="i-mirror" viewBox="0 0 24 24"><path d="M12 3v18M6 8l-4 4 4 4M18 8l4 4-4 4"/></symbol>
-      <symbol id="i-generate" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 13h7v7h-7zM13 4h7v7h-7zM4 13h7v7H4z"/></symbol>
-      <symbol id="i-cols" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></symbol>
-      <symbol id="i-rows" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="7" rx="1"/><rect x="4" y="14" width="16" height="7" rx="1"/></symbol>
-      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1"/><rect x="4.5" y="4" width="6.5" height="4.5" rx="1"/><rect x="12.5" y="4" width="6.5" height="4.5" rx="1"/></symbol>
+      <symbol id="i-generate" viewBox="0 0 24 24"><path d="M10.5 3.2l1.7 5.6 5.6 1.7-5.6 1.7-1.7 5.6-1.7-5.6-5.6-1.7 5.6-1.7z"/><path d="M18 14.5l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z"/></symbol>
+      <symbol id="i-cols" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M12 4.5v15"/></symbol>
+      <symbol id="i-rows" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="1.5"/><path d="M3.5 12h17"/></symbol>
+      <symbol id="i-tabs" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="11.5" rx="1.5"/><path d="M7 8V5.6a1 1 0 011-1h3.4a1 1 0 011 1V8"/></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
       <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
       <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10"/></symbol>
@@ -76,7 +76,8 @@
 
   <!-- ========== 生成タブ ========== -->
   <section id="tab-generate" class="tab-panel active">
-    <div class="card">
+    <details class="card cpane" data-ckey="gen-type" open>
+      <summary class="cpane-head"><span data-i18n="gen.paneType">種類の設定</span></summary>
       <div class="controls">
         <label>
           <span data-i18n="gen.type">種類</span>
@@ -143,10 +144,10 @@
           <span data-i18n="gen.addBorder">余白(白枠)を付ける</span>
         </label>
       </div>
-    </div>
+    </details>
 
-    <div class="card">
-      <h3 data-i18n="gen.single">単一</h3>
+    <details class="card cpane" data-ckey="gen-single" open>
+      <summary class="cpane-head"><span data-i18n="gen.single">単一マーカー</span></summary>
       <div class="generate-output">
         <div class="canvas-wrap"><canvas id="gen-canvas" width="300" height="300"></canvas></div>
         <div class="gen-side">
@@ -168,10 +169,10 @@
           </div>
         </div>
       </div>
-    </div>
+    </details>
 
-    <div class="card">
-      <h3 data-i18n="gen.batch">一括生成</h3>
+    <details class="card cpane" data-ckey="gen-batch" open>
+      <summary class="cpane-head"><span data-i18n="gen.batch">リストから一括生成</span></summary>
       <div class="controls">
         <label class="grow">
           <span id="gen-list-label" data-i18n="gen.idList">ID リスト</span>
@@ -193,12 +194,13 @@
       </div>
       <p id="gen-batch-info" class="gen-label"></p>
       <div id="gen-grid" class="gen-grid"></div>
-    </div>
+    </details>
   </section>
 
   <!-- ========== スキャンタブ ========== -->
   <section id="tab-scan" class="tab-panel">
-    <div class="card">
+    <details class="card cpane" data-ckey="scan-config" open>
+      <summary class="cpane-head"><span data-i18n="scan.paneConfig">認識の設定</span></summary>
       <div class="controls">
         <label>
           <span data-i18n="scan.dictionary">認識対象</span>
@@ -245,8 +247,6 @@
         <span class="action-buttons">
           <button id="scan-start" class="iconbtn primary" disabled data-i18n-title="scan.start">
             <svg class="ic ic-fill"><use href="#i-play"/></svg></button>
-          <button id="scan-pause" class="iconbtn" disabled data-i18n-title="scan.pause">
-            <svg class="ic ic-fill"><use href="#i-pause"/></svg></button>
           <button id="scan-stop" class="iconbtn" disabled data-i18n-title="scan.stop">
             <svg class="ic ic-fill"><use href="#i-stop"/></svg></button>
         </span>
@@ -260,7 +260,7 @@
           <button type="button" data-layout="tabs" data-i18n-title="layout.tabs"><svg class="ic"><use href="#i-tabs"/></svg></button>
         </span>
       </div>
-    </div>
+    </details>
 
     <!-- ステージ：カメラ / 検出結果 / 3D ワールド / 3D モデル を自由配置 -->
     <div class="stage" id="stage" data-layout="row">
@@ -345,6 +345,7 @@
           <div class="panel-bar">
             <span class="panel-title" data-i18n="model.title">3D モデル</span>
             <label class="inline-check mini-check"><input id="model-toggle" type="checkbox" checked /><span data-i18n="model.show">表示</span></label>
+            <label class="inline-check mini-check" data-i18n-title="model.autoIncTip"><input id="model-autoinc" type="checkbox" checked /><span data-i18n="model.autoInc">ID自動</span></label>
             <span class="panel-tools">
               <button type="button" class="mini" data-move="model:-1" data-i18n-title="panel.moveBack">◀</button>
               <button type="button" class="mini" data-move="model:1" data-i18n-title="panel.moveFwd">▶</button>
@@ -365,6 +366,7 @@
       <span data-i18n="footer">OpenCV.js / Three.js を使用。映像は端末内で処理され、外部送信されません。</span>
       <button id="lic-btn" class="link-btn" data-i18n="licenses.link">ライセンス・知財表記</button>
     </p>
+    <p class="copyright">© 2026 <a href="https://github.com/akichika/2DMarkerTool" target="_blank" rel="noopener">akichika</a></p>
   </footer>
 
   <!-- ログパネル -->
@@ -407,7 +409,7 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-  <script src="i18n.js?v=27"></script>
-  <script src="app.js?v=27"></script>
+  <script src="i18n.js?v=29"></script>
+  <script src="app.js?v=29"></script>
 </body>
 </html>

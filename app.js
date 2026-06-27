@@ -140,9 +140,15 @@ function renderAbout() {
     `<p><strong>${t("about.site")}</strong><br><a href="${site}" target="_blank" rel="noopener">${site}</a></p>` +
     `<p><strong>${t("about.repo")}</strong><br><a href="${repo}" target="_blank" rel="noopener">${repo}</a></p>` +
     `<p class="hint">${escapeHtml(t("about.note"))}</p>` +
-    `<p><strong>${t("about.credit")}</strong><br>© akichika &nbsp; <a href="${x}" target="_blank" rel="noopener">${x}</a></p>` +
+    `<p><strong>${t("about.credit")}</strong><br>© 2026 akichika &nbsp; <a href="${x}" target="_blank" rel="noopener">${x}</a></p>` +
+    `<p><button id="settings-reset" class="reset-btn" type="button">${escapeHtml(t("about.reset"))}</button></p>` +
     `<hr class="about-hr" />` +
     `<p><strong>${t("about.oss")}</strong></p>` + LICENSES_HTML;
+}
+function resetSettings() {
+  if (!window.confirm(t("about.resetConfirm"))) return;
+  Object.keys(localStorage).filter((k) => k.indexOf("aruco.") === 0).forEach((k) => localStorage.removeItem(k));
+  location.reload();
 }
 
 function setAboutTab(tab) {
@@ -169,7 +175,7 @@ window.onOpenCvError = function () { logMsg("error", t("status.error")); };
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheEls(); initTheme(); initLang(); renderLicenses(); bindUI(); initPWA();
-  initModels(); initStage(); probeDeviceOrient();
+  initModels(); initStage(); initCollapsibles(); probeDeviceOrient();
   setStatusDot("loading", t("status.loading")); logMsg("loading", t("status.loading"));
   if (window.cv && cv.Mat && !cvReady) window.onOpenCvReady();
 });
@@ -201,7 +207,7 @@ function cacheEls() {
   els.fillModeCtrl = id("fill-mode-ctrl"); els.fillMode = id("fill-mode");
   els.fillColorCtrl = id("fill-color-ctrl"); els.fillColor = id("fill-color");
   els.markerLenCtrl = id("marker-len-ctrl"); els.markerLen = id("marker-len");
-  els.scanCamera = id("scan-camera"); els.scanStart = id("scan-start"); els.scanStop = id("scan-stop"); els.scanPause = id("scan-pause");
+  els.scanCamera = id("scan-camera"); els.scanStart = id("scan-start"); els.scanStop = id("scan-stop");
   els.staticImg = id("static-img"); els.staticLoadBtn = id("static-load-btn"); els.staticFile = id("static-file");
   els.worldToggle = id("world-toggle"); els.worldCanvas = id("world-canvas");
   els.worldDeviceBtn = id("world-device-btn"); els.worldScaleCap = id("world-scale-cap");
@@ -215,7 +221,7 @@ function cacheEls() {
   els.worldPanel = document.querySelector('.stage-panel[data-panel="world"]');
   // 3D モデル
   els.modelPanel = document.querySelector('.stage-panel[data-panel="model"]');
-  els.modelToggle = id("model-toggle"); els.modelTabs = id("model-tabs"); els.modelBodies = id("model-bodies");
+  els.modelToggle = id("model-toggle"); els.modelTabs = id("model-tabs"); els.modelBodies = id("model-bodies"); els.modelAutoInc = id("model-autoinc");
 }
 
 function bindUI() {
@@ -235,9 +241,8 @@ function bindUI() {
   els.genBatchZip.addEventListener("click", downloadBatchZip);
   els.genBatchPrint.addEventListener("click", printBatchSheet);
 
-  els.scanStart.addEventListener("click", startScan);
+  els.scanStart.addEventListener("click", onPlayPause);
   els.scanStop.addEventListener("click", stopScan);
-  els.scanPause.addEventListener("click", togglePause);
   els.staticLoadBtn.addEventListener("click", () => els.staticFile.click());
   els.staticFile.addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) loadStaticImage(f); e.target.value = ""; });
   els.scanDict.addEventListener("change", () => { lockedKeys = null; lostFrames = 0; updateLockIndicator(); });
@@ -255,7 +260,10 @@ function bindUI() {
 
   // レイアウト（横/縦/タブ・並べ替え・タブ切替）
   els.layoutSeg.addEventListener("click", (e) => { const b = e.target.closest("button[data-layout]"); if (b) setStageLayout(b.dataset.layout); });
-  els.stagePanels.addEventListener("click", (e) => { const b = e.target.closest("button[data-move]"); if (b) movePanel(b.dataset.move); });
+  els.stagePanels.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-move]"); if (b) { movePanel(b.dataset.move); return; }
+    const t = e.target.closest(".panel-title"); if (t) togglePanelCollapse(t.closest(".stage-panel"));
+  });
   els.stageTabs.addEventListener("click", (e) => { const b = e.target.closest("button[data-panel]"); if (b) selectStagePanel(b.dataset.panel); });
   els.listOrientBtn.addEventListener("click", toggleListOrient);
 
@@ -282,6 +290,7 @@ function bindUI() {
   els.aboutBtn.addEventListener("click", () => { if (els.aboutPanel.hidden) openAbout("about"); else togglePanel(els.aboutPanel, false); });
   els.aboutClose.addEventListener("click", () => togglePanel(els.aboutPanel, false));
   els.aboutTabs.addEventListener("click", (e) => { const b = e.target.closest("[data-atab]"); if (b) setAboutTab(b.dataset.atab); });
+  els.aboutList.addEventListener("click", (e) => { if (e.target.closest("#settings-reset")) resetSettings(); });
   // ESC・ウィンドウ外クリックで「このアプリについて」を閉じる
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && els.aboutPanel && !els.aboutPanel.hidden) togglePanel(els.aboutPanel, false); });
   document.addEventListener("mousedown", (e) => {
@@ -732,8 +741,14 @@ function waitForVideoReady(video) {
     ["loadedmetadata", "loadeddata", "canplay"].forEach((e) => video.addEventListener(e, on));
   });
 }
-// 一時停止（再開は「カメラ開始」ボタンで行う）
-function togglePause() {
+// 再生／一時停止トグル（1ボタン）: 未起動→開始、再生中→一時停止、一時停止中→再開
+function onPlayPause() {
+  if (!cvReady) return;
+  if (!scanning) { startScan(); return; }
+  if (staticImg) return;
+  if (paused) resumeScan(); else pauseScan();
+}
+function pauseScan() {
   if (!scanning || staticImg || paused) return;
   paused = true;
   try { els.video.pause(); } catch (e) {}
@@ -746,13 +761,14 @@ function resumeScan() {
   try { els.video.play(); } catch (e) {}
   updatePauseBtn();
 }
+// scan-start を再生/一時停止トグルとして表示更新
 function updatePauseBtn() {
-  if (!els.scanPause) return;
-  els.scanPause.classList.toggle("active", paused);
-  els.scanPause.disabled = !scanning || !!staticImg || paused; // 一時停止中は押せない
-  els.scanPause.title = t("scan.pause");
-  // カメラ開始ボタン: 未起動なら開始、一時停止中なら再開で有効化
-  if (els.scanStart) els.scanStart.disabled = scanning && !paused;
+  if (!els.scanStart) return;
+  const showPause = scanning && !paused && !staticImg;
+  const u = els.scanStart.querySelector("use"); if (u) u.setAttribute("href", showPause ? "#i-pause" : "#i-play");
+  els.scanStart.title = t(showPause ? "scan.pause" : (scanning && paused ? "scan.resume" : "scan.start"));
+  els.scanStart.disabled = !cvReady || !!staticImg;
+  if (els.scanStop) els.scanStop.disabled = !scanning && !staticImg;
 }
 /* ---------- 静止画読み込み ---------- */
 function showStaticImage(url) {
@@ -796,7 +812,7 @@ async function startScan() {
   applyCameraTuning(); applyVideoFilter();
   setupMats(); scanning = true; paused = false; lockedKeys = null; lostFrames = 0; scanFrame = 0; lastQR = []; lastBC = []; lastQRf = -99; lastBCf = -99;
   onDisplayModeChange();
-  els.scanStart.disabled = true; els.scanStop.disabled = false; updateLockIndicator(); updatePauseBtn();
+  els.scanStop.disabled = false; updateLockIndicator(); updatePauseBtn();
   syncPaneHeights(); requestAnimationFrame(syncPaneHeights);
   logMsg("ready", t("status.scanning", { w: els.video.videoWidth, h: els.video.videoHeight }));
   lastTime = performance.now(); loop();
@@ -1339,6 +1355,28 @@ const STAGE_KEYS = ["camera", "list", "world", "model"];
 let stageLayout = "row", stageOrder = ["camera", "list", "world", "model"], activeStagePanel = "camera";
 function need3d() { return els.displayMode.value === "3d" || els.worldToggle.checked; }
 function panelEl(k) { return document.querySelector(`.stage-panel[data-panel="${k}"]`); }
+// ステージパネルの折りたたみ（状態を保存）
+function togglePanelCollapse(panel) {
+  if (!panel) return;
+  const on = !panel.classList.contains("collapsed");
+  panel.classList.toggle("collapsed", on);
+  localStorage.setItem("aruco.panel." + panel.dataset.panel, on ? "1" : "0");
+  requestAnimationFrame(() => { syncPaneHeights(); resizeWorld(); });
+}
+function restorePanelCollapse() {
+  document.querySelectorAll(".stage-panel[data-panel]").forEach((p) => {
+    if (localStorage.getItem("aruco.panel." + p.dataset.panel) === "1") p.classList.add("collapsed");
+  });
+}
+// カード（details.cpane）の開閉状態を保存・復元
+function initCollapsibles() {
+  document.querySelectorAll("details.cpane[data-ckey]").forEach((d) => {
+    const k = "aruco.cpane." + d.dataset.ckey, s = localStorage.getItem(k);
+    if (s !== null) d.open = s === "1";
+    d.addEventListener("toggle", () => localStorage.setItem(k, d.open ? "1" : "0"));
+  });
+  restorePanelCollapse();
+}
 function initStage() {
   stageLayout = localStorage.getItem("aruco.layout") || "row";
   const savedBg = localStorage.getItem("aruco.worldbg"); if (savedBg && els.worldBg) els.worldBg.value = savedBg;
@@ -1412,6 +1450,10 @@ function seedHex(seed) { const h = (Math.abs(seed | 0) * 47) % 360; const c = ne
 function primColor(m) { return m.colorAuto ? seedHex(m.id) : (m.color || "#8fd6a8"); }
 function initModels() {
   if (els.modelToggle) modelsEnabled = els.modelToggle.checked;
+  if (els.modelAutoInc) {
+    const s = localStorage.getItem("aruco.modelAutoInc"); if (s !== null) els.modelAutoInc.checked = s === "1";
+    els.modelAutoInc.addEventListener("change", () => localStorage.setItem("aruco.modelAutoInc", els.modelAutoInc.checked ? "1" : "0"));
+  }
   if (!models.length) addModel(false);
   renderModelTabs(); renderModelBody();
 }
@@ -1421,7 +1463,10 @@ function onModelToggle() {
   if (!scanning && els.worldToggle.checked) renderWorldStatic();
 }
 function addModel(render) {
-  const m = { key: ++modelSeq, source: "primitive", shape: "cube", sampleId: "house", color: "#8fd6a8", colorAuto: true, id: 0, name: "", url: null, texUrl: null, texture: null, scale: 1, rx: 0, ry: 0, rz: 0, tx: 0, ty: 0, tz: 0, template: null, baseFoot: 1, status: "", arObj: null, worldObj: null };
+  // ID自動採番（既定ON）: 既存の最大ID+1
+  let nid = 0;
+  if (els.modelAutoInc && els.modelAutoInc.checked && models.length) nid = Math.max(...models.map((x) => x.id | 0)) + 1;
+  const m = { key: ++modelSeq, source: "primitive", shape: "cube", sampleId: "house", color: "#8fd6a8", colorAuto: true, id: nid, name: "", url: null, texUrl: null, texture: null, scale: 1, rx: 0, ry: 0, rz: 0, tx: 0, ty: 0, tz: 0, template: null, baseFoot: 1, status: "", arObj: null, worldObj: null };
   models.push(m); activeModel = models.length - 1;
   rebuildFromSource(m); // 既定はプリミティブ（立方体・自動色）を即表示
   if (render !== false) { renderModelTabs(); renderModelBody(); }

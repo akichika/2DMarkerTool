@@ -1,5 +1,5 @@
 /* ArUco Marker Tool — Service Worker */
-const CACHE = "aruco-v18";
+const CACHE = "aruco-v20";
 const CORE = [
   "./", "./index.html", "./style.css", "./app.js", "./i18n.js",
   "./manifest.json", "./icon-192.png", "./icon-512.png",

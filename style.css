@@ -35,11 +35,15 @@ button, select, input, textarea, .tab, .badge, .lock-badge, .log-badge,
 .status-dot { border-radius: 50% !important; } /* ステータス灯のみ円形 */
 body {
   margin: 0;
-  font-family: "Segoe UI", "Hiragino Kaku Gothic ProN", "Meiryo", system-ui, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", sans-serif;
   background: var(--bg);
-  color: var(--text); line-height: 1.5;
+  color: var(--text); line-height: 1.55; letter-spacing: .01em;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility;
   padding-bottom: env(safe-area-inset-bottom);
 }
+h1, h3, .panel-title, .about-name strong { letter-spacing: .005em; }
+h1 { font-weight: 650; }
+.tabular { font-variant-numeric: tabular-nums; }
 
 /* ---------- ヘッダ ---------- */
 header { max-width: 1080px; margin: 0 auto; padding: 8px 12px; }
@@ -96,14 +100,22 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 :focus-visible { outline: none; box-shadow: var(--focus); }
 
 /* ---------- タブ（ヘッダー内・セグメント） ---------- */
-.header-top .tabs { display: inline-flex; gap: 0; border: 1px solid var(--border); overflow: hidden; }
-.header-top .tab {
-  padding: 7px 18px; background: var(--elev); color: var(--muted);
-  border: none; border-left: 1px solid var(--border); font-size: .9rem; min-height: 34px;
+/* セグメンテッドコントロール（生成/認識・レイアウト共通）: 凹んだトラックに有効な1つが浮き上がる */
+.header-top .tabs, .seg {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--panel-2); border: 1px solid var(--border);
 }
-.header-top .tab:first-child { border-left: none; }
-.header-top .tab:hover { color: var(--text); }
-.header-top .tab.active { background: var(--accent); color: var(--accent-fg); font-weight: 700; }
+.header-top .tab, .seg button {
+  border: none; background: transparent; color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 30px; transition: background .12s, color .12s;
+}
+.header-top .tab { padding: 5px 18px; font-size: .9rem; letter-spacing: .02em; }
+.header-top .tab:hover, .seg button:hover { color: var(--text); }
+.header-top .tab.active, .seg button.active {
+  background: var(--accent); color: var(--accent-fg); font-weight: 700;
+  box-shadow: 0 1px 2px rgba(0,0,0,.18);
+}
 
 .tab-panel { display: none; max-width: 1080px; margin: 0 auto; padding: 10px 12px; }
 .tab-panel.active { display: block; }
@@ -114,6 +126,23 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   padding: 11px 12px; margin-bottom: 10px;
 }
 .card > h3 { margin: 0 0 8px; font-size: 1rem; }
+/* 折りたたみカード（種類設定・単一・一括・認識設定） */
+details.cpane > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 650; color: var(--text); margin: 0 0 10px; }
+details.cpane > summary::-webkit-details-marker { display: none; }
+details.cpane > summary::before { content: "▶"; font-size: .64rem; color: var(--muted); transition: transform .12s; }
+details.cpane[open] > summary::before { transform: rotate(90deg); }
+details.cpane:not([open]) > summary { margin-bottom: 0; }
+/* ステージパネルの折りたたみ（タイトルクリック） */
+.panel-title { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; user-select: none; }
+.panel-title::before { content: "▶"; font-size: .58rem; color: var(--muted); transition: transform .12s; }
+.stage-panel:not(.collapsed) .panel-title::before { transform: rotate(90deg); }
+.stage-panel.collapsed > *:not(.panel-bar) { display: none; }
+/* フッター著作権 */
+.copyright { margin: 6px 0 0; color: var(--muted); font-size: .76rem; }
+.copyright a { color: var(--accent-2); text-decoration: none; }
+.copyright a:hover { text-decoration: underline; }
+.reset-btn { font-size: .82rem; padding: 5px 12px; min-height: 30px; border-color: var(--danger); color: var(--danger); background: transparent; }
+.reset-btn:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); }
 .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
 .controls label { display: flex; flex-direction: column; gap: 5px; font-size: .76rem; color: var(--muted); }
 .controls label.checkbox { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: .88rem; min-height: 40px; }
@@ -174,10 +203,8 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent);
 /* ---------- ステージ（柔軟レイアウト） ---------- */
 .stage { display: flex; flex-direction: column; gap: 8px; }
 .stage-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.seg { display: inline-flex; border: 1px solid var(--border); overflow: hidden; }
-.seg button { border: none; border-left: 1px solid var(--border); padding: 6px 10px; min-height: 32px; background: var(--elev); }
-.seg button:first-child { border-left: none; }
-.seg button.active { background: var(--accent); color: var(--accent-fg); }
+.seg button { width: 40px; padding: 0; }
+.seg .ic { width: 18px; height: 18px; }
 .stage-tabs { display: flex; gap: 4px; }
 .stage-tabs button { padding: 6px 12px; min-height: 32px; font-size: .85rem; }
 .stage-tabs button.active { background: var(--panel-2); color: var(--text); font-weight: 700; border-bottom: 2px solid var(--accent); }
@@ -194,6 +221,10 @@ input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--accent);
 .panel-title { font-size: .9rem; font-weight: 700; }
 .panel-tools { margin-left: auto; display: inline-flex; gap: 4px; }
 .mini { padding: 2px 8px; min-height: 26px; font-size: .8rem; line-height: 1; }
+/* パネルバーのアイコンボタンは正方形でサイズ・間隔を統一 */
+.panel-bar .mini { width: 30px; height: 30px; min-height: 0; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.panel-bar .mini .ic { width: 16px; height: 16px; }
+.panel-tools { gap: 3px; }
 .bg-pick { display: inline-flex; align-items: center; gap: 5px; font-size: .72rem; color: var(--muted); }
 .bg-pick select { min-width: 0; padding: 4px 6px; min-height: 28px; font-size: .8rem; }
 
