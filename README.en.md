@@ -20,8 +20,9 @@
 
 > Video is processed entirely on-device and never uploaded. No build step, no package dependencies — plain HTML/CSS/JS.
 
-![Generate tab](docs/screenshots/01-generate-aruco.png)
+![Generate tab](docs/screenshots/01-generate-aruco-en.png)
 
+![Scan tab](docs/screenshots/02-scan-en.png)
 ---
 
 ## Features
@@ -38,13 +39,9 @@
 
 ## Screenshots
 
-| Recognition (2D box) | 3D pose (AR) | 3D world view |
-|---|---|---|
-| ![2D](docs/screenshots/04-scan-2d.png) | ![3D pose](docs/screenshots/06-scan-3d-pose.png) | ![world](docs/screenshots/07-world-view.png) |
-
-| Model overlay + preview | QR / barcode decode | Flexible layout |
-|---|---|---|
-| ![model](docs/screenshots/08-model-overlay.png) | ![decode](docs/screenshots/09-decode-list.png) | ![layout](docs/screenshots/10-layout.png) |
+| Recognition (2D box) | 3D pose (AR) | 3D world view | Model overlay setting |
+|---|---|---|---|
+| ![2D](docs/screenshots/04-scan-2d.png) | ![3D pose](docs/screenshots/06-scan-3d-pose.png) | ![world](docs/screenshots/07-world-view.png) | ![model](docs/screenshots/08-scan-3d-model.png) |
 
 ## Usage
 
