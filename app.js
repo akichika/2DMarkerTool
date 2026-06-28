@@ -243,6 +243,7 @@ function bindUI() {
 
   els.scanStart.addEventListener("click", onPlayPause);
   els.scanStop.addEventListener("click", stopScan);
+  els.scanCamera.addEventListener("change", () => { if (scanning) startScan(); });
   els.staticLoadBtn.addEventListener("click", () => els.staticFile.click());
   els.staticFile.addEventListener("change", (e) => { const f = e.target.files && e.target.files[0]; if (f) loadStaticImage(f); e.target.value = ""; });
   els.scanDict.addEventListener("change", () => { lockedKeys = null; lostFrames = 0; updateLockIndicator(); });
