@@ -22,6 +22,9 @@ ArUco / AprilTag / QR / バーコードを生成し、カメラで認識して�
 
 ![生成タブ](docs/screenshots/01-generate-aruco.png)
 
+![認識タブ](docs/screenshots/02-scan.png)
+
+
 ## 作った理由
 
 AR やロボットの位置合わせで ArUco や AprilTag を使うとき、マーカーを作る・印刷する・きちんと認識されるか確かめる、という地味な往復作業を、毎回別々のツールでやっていました。手元でさっと済ませたかったので、生成から確認までを一画面にまとめ、ブラウザだけで動くものを書きました。特別なことはしておらず、既存のライブラリを素直につないだ程度のものです。
@@ -35,9 +38,10 @@ AR やロボットの位置合わせで ArUco や AprilTag を使うとき、マ
 - **一時停止・静止画読み込み**: 映像を止めた画面や、手元の画像ファイルからも認識できます。静止フレームでは数回認識して多数決を取り、結果を安定させています。
 - **その他**: 日本語 / 英語 / 中国語 / スペイン語、テーマ 4 種、PWA（インストール・オフライン動作）、暗所向けの明るさ・コントラスト補正。
 
-| 認識（2D 枠） | 3D 姿勢 | 3D ビュー |
+| 認識（2D 枠） | 3D 姿勢 | 3D ビュー | AR モデル設定 |
 |---|---|---|
-| ![2D](docs/screenshots/04-scan-2d.png) | ![3D pose](docs/screenshots/06-scan-3d-pose.png) | ![world](docs/screenshots/07-world-view.png) |
+| ![2D](docs/screenshots/04-scan-2d.png) | ![3D pose](docs/screenshots/06-scan-3d-pose.png) | ![world](docs/screenshots/07-world-view.png) | ![model](docs/screenshots/08-scan-3d-model.png) |
+
 
 ## 使い方
 
