@@ -39,7 +39,7 @@ AR やロボットの位置合わせで ArUco や AprilTag を使うとき、マ
 - **その他**: 日本語 / 英語 / 中国語 / スペイン語、テーマ 4 種、PWA（インストール・オフライン動作）、暗所向けの明るさ・コントラスト補正。
 
 | 認識（2D 枠） | 3D 姿勢 | 3D ビュー | AR モデル設定 |
-|---|---|---|
+|---|---|---|---|
 | ![2D](docs/screenshots/04-scan-2d.png) | ![3D pose](docs/screenshots/06-scan-3d-pose.png) | ![world](docs/screenshots/07-world-view.png) | ![model](docs/screenshots/08-scan-3d-model.png) |
 
 
