@@ -21,7 +21,6 @@ ArUco / AprilTag / QR / バーコードを生成し、カメラで認識して�
 > カメラ映像は端末内だけで処理され、外部には送信しません。ビルドや依存パッケージはなく、素の HTML / CSS / JS だけで動きます。
 
 ![生成タブ](docs/screenshots/01-generate-aruco.png)
-
 ![認識タブ](docs/screenshots/02-scan.png)
 
 
