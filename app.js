@@ -166,7 +166,10 @@ function openAbout(tab) {
 
 /* ============================================================ 起動 */
 window.onOpenCvReady = function () {
+  if (cvReady) return;
+  if (!els.genBtn) return; // DOM 準備前: DOMContentLoaded 側で拾う
   cvReady = true;
+  if (els.toast) els.toast.hidden = true;
   logMsg("ready", t("status.ready"));
   els.genBtn.disabled = false; els.genBatchBtn.disabled = false; els.scanStart.disabled = false;
   updateGenVisibility(); generateMarker(); enumerateCameras();

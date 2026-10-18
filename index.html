@@ -23,7 +23,7 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-  
+
     gtag('config', 'G-SFX5VG3705');
   </script>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -412,8 +412,6 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script>var Module = { onRuntimeInitialized: function () { if (window.onOpenCvReady) window.onOpenCvReady(); } };</script>
-  <script async src="https://docs.opencv.org/4.8.0/opencv.js" onerror="window.onOpenCvError && window.onOpenCvError()"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -422,6 +420,39 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="i18n.js?v=29"></script>
-  <script src="app.js?v=30"></script>
+  <script src="app.js?v=31"></script>
+  <script>
+  /* OpenCV.js ローダー: 配信元を順に試し、初期化完了を確実に通知する */
+  (function () {
+    var SRC = [
+      "https://cdn.jsdelivr.net/npm/@techstark/opencv-js@4.8.0-release.10/dist/opencv.js",
+      "https://unpkg.com/@techstark/opencv-js@4.8.0-release.10/dist/opencv.js"
+    ];
+    var done = false, failed = false, timer = null;
+    function ready() {
+      if (done || !(window.cv && cv.Mat && cv.getPredefinedDictionary)) return;
+      done = true; clearTimeout(timer);
+      if (window.onOpenCvReady) window.onOpenCvReady();
+    }
+    // 遅い回線でタイムアウト後に読み込めた場合も ready() は受け付ける
+    function fail() { if (done || failed) return; failed = true; if (window.onOpenCvError) window.onOpenCvError(); }
+    window.Module = { onRuntimeInitialized: ready };
+    function load(i) {
+      if (i >= SRC.length) { fail(); return; }
+      var s = document.createElement("script");
+      s.src = SRC[i]; s.async = true; s.crossOrigin = "anonymous";
+      s.onload = function () {
+        var c = window.cv;
+        if (c && c.Mat && c.getPredefinedDictionary) { ready(); return; }
+        if (c && typeof c.then === "function") { c.then(function (m) { if (m && m.Mat) window.cv = m; ready(); }); }
+        else { s.remove(); load(i + 1); }
+      };
+      s.onerror = function () { s.remove(); load(i + 1); };
+      document.body.appendChild(s);
+    }
+    timer = setTimeout(fail, 90000);
+    load(0);
+  })();
+  </script>
 </body>
 </html>
