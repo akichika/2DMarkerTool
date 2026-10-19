@@ -77,6 +77,7 @@ npx serve .
 
 - `index.html` / `style.css` / `i18n.js` / `app.js` — 本体
 - `manifest.json` / `sw.js` / `icon-*.png` — PWA 関連
+- `lib/` — 同梱ライブラリ（OpenCV.js / Three.js / JSZip ほか）。外部 CDN の仕様変更・障害で動かなくなるのを防ぐため。出典は `lib/README.md`
 - `generate_icons.py` — アイコン生成スクリプト（Pillow）
 - `docs/` — スクリーンショット、記事、撮影ガイド
 

@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# 同梱ライブラリは取得元とバイト単位で同一に保つ（改行変換しない）
+lib/*.js -text

@@ -78,6 +78,7 @@ On phones you need HTTPS hosting or a tunnel (e.g. ngrok).
 ## Project files
 - `index.html` / `style.css` / `i18n.js` / `app.js` — the app
 - `manifest.json` / `sw.js` / `icon-*.png` — PWA
+- `lib/` — bundled libraries (OpenCV.js / Three.js / JSZip, etc.) so the app keeps working even if a CDN changes or goes down. Sources: `lib/README.md`
 - `generate_icons.py` — icon (logo) generator (Pillow)
 - `docs/` — screenshots, articles, capture guide
 

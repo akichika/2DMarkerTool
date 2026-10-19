@@ -5,14 +5,21 @@
    OpenCV.js + Three.js (AR重畳 & 3Dワールドビュー) / PWA
    ============================================================ */
 
-const DICT_ENUM = {
-  "4-50": 0, "4-100": 1, "4-250": 2, "4-1000": 3,
-  "5-50": 4, "5-100": 5, "5-250": 6, "5-1000": 7,
-  "6-50": 8, "6-100": 9, "6-250": 10, "6-1000": 11,
-  "7-50": 12, "7-100": 13, "7-250": 14, "7-1000": 15,
-  "aruco-orig": 16,
-  "april-16h5": 17, "april-25h9": 18, "april-36h10": 19, "april-36h11": 20,
+// 辞書キー → [OpenCV の列挙名, 列挙名が無い版向けの既定値]。値は実行時に cv から解決する
+const DICT_ENUM_SPEC = {
+  "4-50": ["DICT_4X4_50", 0], "4-100": ["DICT_4X4_100", 1], "4-250": ["DICT_4X4_250", 2], "4-1000": ["DICT_4X4_1000", 3],
+  "5-50": ["DICT_5X5_50", 4], "5-100": ["DICT_5X5_100", 5], "5-250": ["DICT_5X5_250", 6], "5-1000": ["DICT_5X5_1000", 7],
+  "6-50": ["DICT_6X6_50", 8], "6-100": ["DICT_6X6_100", 9], "6-250": ["DICT_6X6_250", 10], "6-1000": ["DICT_6X6_1000", 11],
+  "7-50": ["DICT_7X7_50", 12], "7-100": ["DICT_7X7_100", 13], "7-250": ["DICT_7X7_250", 14], "7-1000": ["DICT_7X7_1000", 15],
+  "aruco-orig": ["DICT_ARUCO_ORIGINAL", 16],
+  "april-16h5": ["DICT_APRILTAG_16h5", 17], "april-25h9": ["DICT_APRILTAG_25h9", 18],
+  "april-36h10": ["DICT_APRILTAG_36h10", 19], "april-36h11": ["DICT_APRILTAG_36h11", 20],
 };
+function dictEnum(key) {
+  const s = DICT_ENUM_SPEC[key]; if (!s) throw new Error("unknown dictionary: " + key);
+  const v = window.cv && cv[s[0]];
+  return (typeof v === "number") ? v : s[1];
+}
 const ALL_DICTS = ["4-1000", "5-1000", "6-1000", "7-1000"];
 // 自動モードで走査するタグ種別（ArUco 各サイズ + AprilTag 全ファミリー）
 const AUTO_TAG_KEYS = ["4-1000", "5-1000", "6-1000", "7-1000", "april-16h5", "april-25h9", "april-36h10", "april-36h11"];
@@ -25,6 +32,18 @@ const WORLD_GRID_Y = -150;  // グリッドの高さ (mm)
 
 let cvReady = false;
 const els = {};
+
+/* ============================================================ 保存（localStorage が使えない環境でも落ちない） */
+const store = {
+  get(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { window.localStorage.setItem(k, String(v)); } catch (e) {} },
+  remove(k) { try { window.localStorage.removeItem(k); } catch (e) {} },
+  keys() { try { return Object.keys(window.localStorage); } catch (e) { return []; } },
+};
+// 保存値が許可リストに無ければ既定値（古い版の値や手で壊れた値に備える）
+function pick(value, allowed, fallback) { return allowed.indexOf(value) >= 0 ? value : fallback; }
+// <select> の選択肢に存在する値だけ反映する
+function selectHas(sel, value) { return !!sel && Array.prototype.some.call(sel.options, (o) => o.value === value); }
 const dictCache = {}, detectorCache = {}, dictMetaCache = {};
 
 /* ============================================================ i18n */
@@ -50,7 +69,7 @@ function applyI18n() {
   renderLog(); renderLicenses(); renderAbout(); applyTooltips(); renderShortcuts();
 }
 function initLang() {
-  const saved = localStorage.getItem("aruco.lang");
+  const saved = store.get("aruco.lang");
   lang = (saved && STRINGS[saved]) ? saved : detectBrowserLang();
   els.lang.innerHTML = "";
   Object.keys(STRINGS).forEach((code) => {
@@ -58,7 +77,7 @@ function initLang() {
     els.lang.appendChild(o);
   });
   els.lang.value = lang;
-  els.lang.addEventListener("change", () => { lang = els.lang.value; localStorage.setItem("aruco.lang", lang); applyI18n(); });
+  els.lang.addEventListener("change", () => { lang = els.lang.value; store.set("aruco.lang", lang); applyI18n(); });
   applyI18n();
 }
 
@@ -74,9 +93,9 @@ function applyTheme(mode) {
 }
 function initTheme() {
   mqlDark = window.matchMedia("(prefers-color-scheme: dark)");
-  const saved = localStorage.getItem("aruco.theme") || "system";
+  const s = store.get("aruco.theme"), saved = selectHas(els.theme, s) ? s : "system";
   els.theme.value = saved; applyTheme(saved);
-  els.theme.addEventListener("change", () => { localStorage.setItem("aruco.theme", els.theme.value); applyTheme(els.theme.value); });
+  els.theme.addEventListener("change", () => { store.set("aruco.theme", els.theme.value); applyTheme(els.theme.value); });
   mqlDark.addEventListener("change", () => { if (els.theme.value === "system") applyTheme("system"); });
 }
 
@@ -147,7 +166,7 @@ function renderAbout() {
 }
 function resetSettings() {
   if (!window.confirm(t("about.resetConfirm"))) return;
-  Object.keys(localStorage).filter((k) => k.indexOf("aruco.") === 0).forEach((k) => localStorage.removeItem(k));
+  store.keys().filter((k) => k.indexOf("aruco.") === 0).forEach((k) => store.remove(k));
   location.reload();
 }
 
@@ -165,20 +184,44 @@ function openAbout(tab) {
 }
 
 /* ============================================================ 起動 */
+// 1 つの処理が失敗しても残りの初期化を続ける（原因はログに残す）
+function safeRun(name, fn) {
+  try { return fn(); }
+  catch (e) { console.error(name, e); try { logMsg("warn", name + ": " + (e && e.message || e)); } catch (_) {} }
+}
 window.onOpenCvReady = function () {
   if (cvReady) return;
   if (!els.genBtn) return; // DOM 準備前: DOMContentLoaded 側で拾う
-  cvReady = true;
+  cvReady = true; cvApiCache = null;
   if (els.toast) els.toast.hidden = true;
+  safeRun("cvCompat", cvCompat);
   logMsg("ready", t("status.ready"));
   els.genBtn.disabled = false; els.genBatchBtn.disabled = false; els.scanStart.disabled = false;
-  updateGenVisibility(); generateMarker(); enumerateCameras();
+  safeRun("updateGenVisibility", updateGenVisibility);
+  safeRun("generateMarker", generateMarker);
+  safeRun("enumerateCameras", enumerateCameras);
 };
 window.onOpenCvError = function () { logMsg("error", t("status.error")); };
 
+// 想定外のエラーも画面を止めずにログへ（同じ内容は繰り返さない）
+let lastErrMsg = "";
+function reportGlobalError(msg) {
+  msg = String(msg || "error").slice(0, 300);
+  if (msg === lastErrMsg || !els.logList) return; lastErrMsg = msg;
+  try { logMsg("warn", msg); } catch (e) {}
+}
+window.addEventListener("error", (e) => {
+  // 外部リソースの読み込み失敗（img 等）は target 付きで来る
+  if (e && e.target && e.target !== window && e.target.src) return;
+  reportGlobalError(e && (e.message || (e.error && e.error.message)));
+});
+window.addEventListener("unhandledrejection", (e) => reportGlobalError(e && e.reason && (e.reason.message || e.reason)));
+
 document.addEventListener("DOMContentLoaded", () => {
-  cacheEls(); initTheme(); initLang(); renderLicenses(); bindUI(); initPWA();
-  initModels(); initStage(); initCollapsibles(); probeDeviceOrient();
+  cacheEls();
+  [["initTheme", initTheme], ["initLang", initLang], ["renderLicenses", renderLicenses], ["bindUI", bindUI],
+   ["initPWA", initPWA], ["initModels", initModels], ["initStage", initStage], ["initCollapsibles", initCollapsibles],
+   ["probeDeviceOrient", probeDeviceOrient]].forEach(([n, f]) => safeRun(n, f));
   setStatusDot("loading", t("status.loading")); logMsg("loading", t("status.loading"));
   if (window.cv && cv.Mat && !cvReady) window.onOpenCvReady();
 });
@@ -391,25 +434,73 @@ function initPWA() {
 
 /* ============================================================ 辞書 / 検出器 / メタ */
 function getDictionary(key) {
-  if (!dictCache[key]) dictCache[key] = cv.getPredefinedDictionary(DICT_ENUM[key]);
+  if (!dictCache[key]) dictCache[key] = cv.getPredefinedDictionary(dictEnum(key));
   return dictCache[key];
 }
 function getDetector(key) {
   if (!detectorCache[key]) {
-    const dict = getDictionary(key);
-    const params = new cv.aruco_DetectorParameters();
+    const dict = getDictionary(key), A = cvApi();
+    const params = new A.Params();
     let det;
-    try { det = new cv.aruco_ArucoDetector(dict, params, new cv.aruco_RefineParameters(10, 3, true)); }
-    catch (e) { det = new cv.aruco_ArucoDetector(dict, params); }
+    if (A.Detector) {
+      try { det = A.Refine ? new A.Detector(dict, params, new A.Refine(10, 3, true)) : new A.Detector(dict, params); }
+      catch (e) { det = new A.Detector(dict, params); }
+    } else {
+      // 旧 API（OpenCV 4.6 以前）: 関数版 detectMarkers を新 API と同じ形で包む
+      det = { detectMarkers: (img, corners, ids, rej) => cv.detectMarkers(img, dict, corners, ids, params, rej) };
+    }
     detectorCache[key] = det;
   }
   return detectorCache[key];
 }
+// マーカー画像の生成（版により Dictionary のメソッド / 関数 / 旧 drawMarker と名前が違う）
+function markerImage(dict, id, px, mat) {
+  if (typeof dict.generateImageMarker === "function") return dict.generateImageMarker(id, px, mat, 1);
+  if (typeof cv.generateImageMarker === "function") return cv.generateImageMarker(dict, id, px, mat, 1);
+  const draw = cv.aruco_drawMarker || cv.drawMarker;
+  if (typeof draw === "function") return draw(dict, id, px, mat, 1);
+  throw new Error("marker generation API not found");
+}
+// OpenCV の API 名の差を吸収（4.7+ は aruco_ 接頭辞付きのクラス、将来/別ビルドは接頭辞なしの可能性）
+let cvApiCache = null;
+function cvApi() {
+  if (cvApiCache) return cvApiCache;
+  cvApiCache = {
+    Detector: cv.aruco_ArucoDetector || cv.ArucoDetector,
+    Params: cv.aruco_DetectorParameters || cv.DetectorParameters,
+    Refine: cv.aruco_RefineParameters || cv.RefineParameters,
+    Barcode: cv.barcode_BarcodeDetector || cv.BarcodeDetector,
+    QR: cv.QRCodeDetector,
+  };
+  return cvApiCache;
+}
+// 起動時に各機能が使えるか判定。必須(ArUco)以外が欠けても、その機能だけ無効にして動き続ける
+let cvCaps = { aruco: false, qr: false, barcode: false, pose: false };
+function cvCompat() {
+  const A = cvApi();
+  const ok = (f) => { try { return !!f(); } catch (e) { return false; } };
+  cvCaps = {
+    aruco: ok(() => typeof cv.getPredefinedDictionary === "function" && A.Params && (A.Detector || typeof cv.detectMarkers === "function")),
+    qr: ok(() => typeof A.QR === "function"),
+    barcode: ok(() => typeof A.Barcode === "function"),
+    pose: ok(() => typeof cv.solvePnP === "function" && typeof cv.Rodrigues === "function"),
+  };
+  const missing = Object.keys(cvCaps).filter((k) => !cvCaps[k]);
+  if (missing.length) logMsg(cvCaps.aruco ? "warn" : "error", t("status.cvMissing", { list: missing.join(", ") }));
+  return cvCaps.aruco;
+}
+// 列挙名が取れない場合の既定値（キーから決まる）
+const DICT_META_FALLBACK = {
+  "aruco-orig": [5, 1024], "april-16h5": [4, 30], "april-25h9": [5, 35], "april-36h10": [6, 2320], "april-36h11": [6, 587],
+};
 // {markerSize, count}
 function dictMeta(key) {
   if (!dictMetaCache[key]) {
     const d = getDictionary(key);
-    dictMetaCache[key] = { markerSize: d.markerSize, count: (d.bytesList ? d.bytesList.rows : 1000) };
+    const fb = DICT_META_FALLBACK[key] || [parseInt(key, 10), parseInt(key.split("-")[1], 10)];
+    const size = (d && d.markerSize > 0) ? d.markerSize : fb[0];
+    const count = (d && d.bytesList && d.bytesList.rows > 0) ? d.bytesList.rows : fb[1];
+    dictMetaCache[key] = { markerSize: size, count: count };
   }
   return dictMetaCache[key];
 }
@@ -477,6 +568,7 @@ function buildBarcodeSvg(value, format, quiet, height) {
 
 /* ============================================================ QR 生成（共通ヘルパ） */
 function qrModel(text, ec) {
+  if (typeof qrcode !== "function") throw new Error("qrcode-generator N/A");
   const qr = qrcode(0, ec || "M"); qr.addData(text || " "); qr.make(); return qr;
 }
 function renderQrToCanvas(canvas, text, ec, size, quiet) {
@@ -504,7 +596,7 @@ function renderTagToCanvas(canvas, key, id, size, quiet) {
   const total = cell + 2, q = quiet ? 1 : 0, grid = total + 2 * q;
   const modulePx = Math.max(1, Math.round(size / grid));
   const mat = new cv.Mat();
-  dict.generateImageMarker(id, modulePx * total, mat, 1);
+  markerImage(dict, id, modulePx * total, mat);
   if (q > 0) {
     const out = new cv.Mat(), b = modulePx * q;
     cv.copyMakeBorder(mat, out, b, b, b, b, cv.BORDER_CONSTANT, new cv.Scalar(255, 255, 255, 255));
@@ -514,7 +606,7 @@ function renderTagToCanvas(canvas, key, id, size, quiet) {
 }
 function tagBits(key, id) {
   const dict = getDictionary(key), cell = dictMeta(key).markerSize, total = cell + 2, scale = 10;
-  const mat = new cv.Mat(); dict.generateImageMarker(id, total * scale, mat, 1);
+  const mat = new cv.Mat(); markerImage(dict, id, total * scale, mat);
   const bits = [];
   for (let r = 0; r < total; r++) { const row = []; for (let c = 0; c < total; c++) row.push(mat.ucharAt(r * scale + (scale >> 1), c * scale + (scale >> 1)) < 128); bits.push(row); }
   mat.delete(); return { bits, total };
@@ -801,15 +893,33 @@ function loadStaticImage(file) {
   img.onerror = () => { URL.revokeObjectURL(url); logMsg("warn", t("model.error", { msg: "image" })); };
   img.src = url;
 }
+// カメラ取得を段階的に緩めて再試行（選択機種 → 背面 → 何でも）。
+// 選んだ機種が外された・解像度指定に未対応・facingMode 非対応 などでも起動できるようにする
+async function openCamera(deviceId) {
+  const md = navigator.mediaDevices;
+  if (!md || typeof md.getUserMedia !== "function") throw new Error(t("status.noMediaDevices"));
+  const size = { width: { ideal: 1280 }, height: { ideal: 720 } };
+  const tries = [];
+  if (deviceId) tries.push(Object.assign({ deviceId: { exact: deviceId } }, size));
+  tries.push(Object.assign({ facingMode: "environment" }, size), { facingMode: "environment" }, true);
+  let lastErr = null;
+  for (const video of tries) {
+    try { return await md.getUserMedia({ audio: false, video }); }
+    catch (e) {
+      lastErr = e;
+      // 権限拒否は条件を変えても同じなので即終了
+      if (e && (e.name === "NotAllowedError" || e.name === "SecurityError")) break;
+    }
+  }
+  throw lastErr || new Error("getUserMedia failed");
+}
 async function startScan() {
   if (!cvReady) return;
   if (scanning && paused) { resumeScan(); return; } // 一時停止からの再開
   if (staticImg) { if (!window.confirm(t("msg.clearStaticConfirm"))) return; clearStaticImage(); }
   stopScan();
-  const constraints = { audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" } };
-  const sel = els.scanCamera.value; if (sel) constraints.video.deviceId = { exact: sel };
-  try { stream = await navigator.mediaDevices.getUserMedia(constraints); }
-  catch (e) { logMsg("error", t("status.cameraError", { msg: e.message })); return; }
+  try { stream = await openCamera(els.scanCamera.value); }
+  catch (e) { logMsg("error", t("status.cameraError", { msg: (e && (e.message || e.name)) || "unknown" })); return; }
   els.video.srcObject = stream;
   try { await els.video.play(); } catch (e) {}
   await waitForVideoReady(els.video); await enumerateCameras();
@@ -828,7 +938,7 @@ function setupMats(w, h) {
   matFrame = new cv.Mat(h, w, cv.CV_8UC4); matGray = new cv.Mat();
   procCanvas = document.createElement("canvas"); procCanvas.width = w; procCanvas.height = h;
   procCtx = procCanvas.getContext("2d", { willReadFrequently: true });
-  if (!qrDetector) qrDetector = new cv.QRCodeDetector();
+  if (!qrDetector && cvCaps.qr) qrDetector = new (cvApi().QR)();
   setupCamMatrix(w, h);
   if (threeReady) resizeThree(w, h);
 }
@@ -1059,6 +1169,7 @@ function pushQr(results, text, d, off, scale, i) {
 }
 function detectQR(detInput, scale) {
   const results = [];
+  if (!qrDetector) return results;
   const pts = new cv.Mat();
   try {
     if (qrDetector.detectMulti(detInput, pts) && pts.rows > 0) {
@@ -1097,7 +1208,8 @@ function orderQuad(p) {
 let matBar = null;
 function detectBarcode(detInput, scale) {
   const results = [];
-  if (!barcodeDetector) { try { barcodeDetector = new cv.barcode_BarcodeDetector(); } catch (e) { return results; } }
+  if (!cvCaps.barcode) return results;
+  if (!barcodeDetector) { try { barcodeDetector = new (cvApi().Barcode)(); } catch (e) { cvCaps.barcode = false; return results; } }
   // わずかに平滑化するとシャープなエッジでも検出・復号が安定する（実写は元々平滑）
   if (!matBar) matBar = new cv.Mat();
   cv.GaussianBlur(detInput, matBar, new cv.Size(3, 3), 0);
@@ -1259,7 +1371,7 @@ function ensureObjPts() {
   const h = s / 2; objPts = cv.matFromArray(4, 1, cv.CV_32FC3, [-h, h, 0, h, h, 0, h, -h, 0, -h, -h, 0]); objMarkerLen = s;
 }
 function estimatePose(r) {
-  if (!camMat) return null;
+  if (!camMat || !cvCaps.pose) return null;
   // バーコードは縦横比が一定でないため、検出した枠の比率から矩形の物体点を作る
   let objMat = objPts, ownObj = false, flag;
   if (r.isBarcode) {
@@ -1364,27 +1476,27 @@ function togglePanelCollapse(panel) {
   if (!panel) return;
   const on = !panel.classList.contains("collapsed");
   panel.classList.toggle("collapsed", on);
-  localStorage.setItem("aruco.panel." + panel.dataset.panel, on ? "1" : "0");
+  store.set("aruco.panel." + panel.dataset.panel, on ? "1" : "0");
   requestAnimationFrame(() => { syncPaneHeights(); resizeWorld(); });
 }
 function restorePanelCollapse() {
   document.querySelectorAll(".stage-panel[data-panel]").forEach((p) => {
-    if (localStorage.getItem("aruco.panel." + p.dataset.panel) === "1") p.classList.add("collapsed");
+    if (store.get("aruco.panel." + p.dataset.panel) === "1") p.classList.add("collapsed");
   });
 }
 // カード（details.cpane）の開閉状態を保存・復元
 function initCollapsibles() {
   document.querySelectorAll("details.cpane[data-ckey]").forEach((d) => {
-    const k = "aruco.cpane." + d.dataset.ckey, s = localStorage.getItem(k);
+    const k = "aruco.cpane." + d.dataset.ckey, s = store.get(k);
     if (s !== null) d.open = s === "1";
-    d.addEventListener("toggle", () => localStorage.setItem(k, d.open ? "1" : "0"));
+    d.addEventListener("toggle", () => store.set(k, d.open ? "1" : "0"));
   });
   restorePanelCollapse();
 }
 function initStage() {
-  stageLayout = localStorage.getItem("aruco.layout") || "row";
-  const savedBg = localStorage.getItem("aruco.worldbg"); if (savedBg && els.worldBg) els.worldBg.value = savedBg;
-  listOrient = localStorage.getItem("aruco.listorient") || "vertical";
+  stageLayout = pick(store.get("aruco.layout"), ["row", "column", "tabs"], "row");
+  const savedBg = store.get("aruco.worldbg"); if (selectHas(els.worldBg, savedBg)) els.worldBg.value = savedBg;
+  listOrient = pick(store.get("aruco.listorient"), ["vertical", "horizontal"], "vertical");
   applyListOrient();
   applyStageLayout();
 }
@@ -1395,7 +1507,7 @@ function applyListOrient() {
   const use = els.listOrientBtn && els.listOrientBtn.querySelector("use");
   if (use) use.setAttribute("href", horiz ? "#i-cols" : "#i-rows");
 }
-function toggleListOrient() { listOrient = (listOrient === "horizontal") ? "vertical" : "horizontal"; localStorage.setItem("aruco.listorient", listOrient); applyListOrient(); }
+function toggleListOrient() { listOrient = (listOrient === "horizontal") ? "vertical" : "horizontal"; store.set("aruco.listorient", listOrient); applyListOrient(); }
 function visiblePanels() {
   return stageOrder.filter((k) => {
     if (k === "world") return els.worldToggle.checked;
@@ -1403,7 +1515,7 @@ function visiblePanels() {
     return true;
   });
 }
-function setStageLayout(layout) { stageLayout = layout; localStorage.setItem("aruco.layout", layout); applyStageLayout(); }
+function setStageLayout(layout) { stageLayout = layout; store.set("aruco.layout", layout); applyStageLayout(); }
 function movePanel(spec) {
   const [key, dStr] = spec.split(":"); const i = stageOrder.indexOf(key), j = i + parseInt(dStr, 10);
   if (i < 0 || j < 0 || j >= stageOrder.length) return;
@@ -1455,8 +1567,8 @@ function primColor(m) { return m.colorAuto ? seedHex(m.id) : (m.color || "#8fd6a
 function initModels() {
   if (els.modelToggle) modelsEnabled = els.modelToggle.checked;
   if (els.modelAutoInc) {
-    const s = localStorage.getItem("aruco.modelAutoInc"); if (s !== null) els.modelAutoInc.checked = s === "1";
-    els.modelAutoInc.addEventListener("change", () => localStorage.setItem("aruco.modelAutoInc", els.modelAutoInc.checked ? "1" : "0"));
+    const s = store.get("aruco.modelAutoInc"); if (s !== null) els.modelAutoInc.checked = s === "1";
+    els.modelAutoInc.addEventListener("change", () => store.set("aruco.modelAutoInc", els.modelAutoInc.checked ? "1" : "0"));
   }
   if (!models.length) addModel(false);
   renderModelTabs(); renderModelBody();
@@ -1759,7 +1871,7 @@ function setWorldBackground(kind) {
 function onWorldBgChange() {
   const v = els.worldBg.value;
   if (v === "custom") { els.worldBgFile.click(); return; }
-  localStorage.setItem("aruco.worldbg", v); setWorldBackground(v);
+  store.set("aruco.worldbg", v); setWorldBackground(v);
 }
 function onWorldBgFile() {
   const f = els.worldBgFile.files && els.worldBgFile.files[0]; if (!f || !worldReady) return;
@@ -1794,7 +1906,7 @@ function initWorld() {
   worldControls.addEventListener("start", () => { worldInteracting = true; updateDetThrottle(); });
   worldControls.addEventListener("end", () => { worldInteracting = false; updateDetThrottle(); });
   worldReady = true;
-  setWorldBackground((els.worldBg && els.worldBg.value) || localStorage.getItem("aruco.worldbg") || "auto");
+  setWorldBackground((els.worldBg && els.worldBg.value) || store.get("aruco.worldbg") || "auto");
 }
 function makeCameraGizmo() {
   const g = new THREE.Group();
